@@ -25,12 +25,19 @@ function App() {
   const [mouseX, setMouseX] = useState(0)
   const [mouseY, setMouseY] = useState(0)
   const [isResumeOpen, setIsResumeOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
   // Detect mobile / reduced motion
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const reducedMotion =
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  // Update isMobile on resize / orientation change
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize, { passive: true })
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const lenisRef = useRef<Lenis | null>(null)
 

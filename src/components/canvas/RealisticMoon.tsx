@@ -20,8 +20,8 @@ export default function RealisticMoon({ mouseX, mouseY, isMobile, scrollProgress
 
   // Generate procedural lunar surface textures
   const { colorMap, bumpMap } = useMemo(() => {
-    const width = 1024
-    const height = 512
+    const width = 768   // was 1024 — imperceptible difference at this scale
+    const height = 384  // was 512
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
@@ -65,8 +65,8 @@ export default function RealisticMoon({ mouseX, mouseY, isMobile, scrollProgress
       ctx.fill()
     })
 
-    // Procedural impact craters
-    for (let i = 0; i < 280; i++) {
+    // Procedural impact craters — reduced count for perf
+    for (let i = 0; i < 180; i++) {
       const cx = Math.random() * width
       const cy = Math.random() * height
       const cr = 2 + Math.random() * 22
@@ -155,9 +155,9 @@ export default function RealisticMoon({ mouseX, mouseY, isMobile, scrollProgress
         distance={20}
       />
 
-      {/* ── Moon Mesh ── */}
+      {/* ── Moon Mesh (48x48 segments, reduced from 64x64 for perf) ── */}
       <mesh ref={moonRef} castShadow receiveShadow>
-        <sphereGeometry args={[radius, 64, 64]} />
+        <sphereGeometry args={[radius, 48, 48]} />
         <meshStandardMaterial
           map={colorMap}
           bumpMap={bumpMap}

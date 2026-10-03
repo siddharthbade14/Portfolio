@@ -1,5 +1,5 @@
 import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, invalidate } from '@react-three/fiber'
 import { Stars } from '@react-three/drei'
 import * as THREE from 'three'
 
@@ -82,15 +82,18 @@ export default function RealisticSpaceScene({
       state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, targetZ, delta * 2.5)
       state.camera.lookAt(0, 0, 0)
     }
+
+    // Tell R3F to render the next frame (required for frameloop="demand")
+    invalidate()
   })
 
   return (
     <group>
-      {/* ── Deep Space Crisp Stars ── */}
+      {/* ── Deep Space Crisp Stars (reduced from 4000) ── */}
       <Stars
         radius={120}
         depth={60}
-        count={4000}
+        count={2500}
         factor={3.2}
         saturation={0}
         fade
@@ -103,7 +106,7 @@ export default function RealisticSpaceScene({
         args={[undefined, undefined, count]}
         frustumCulled={false}
       >
-        <sphereGeometry args={[1, 6, 6]} />
+        <sphereGeometry args={[1, 4, 4]} />{/* was 6,6 — fewer verts per ember */}
         <meshBasicMaterial
           color="#ff003c"
           transparent
