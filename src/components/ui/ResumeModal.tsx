@@ -130,11 +130,43 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
           {activeTab === 'pdf' ? (
             /* Tab 1: Embedded Native PDF Document */
             <div className="w-full h-[74vh] md:h-[78vh] flex flex-col items-center">
-              <iframe
-                src="/resume.pdf#toolbar=1&navpanes=0&scrollbar=1"
-                title="Siddharth Sanjay Bade Resume"
+              <object
+                data="/resume.pdf#toolbar=1&navpanes=0&scrollbar=1"
+                type="application/pdf"
                 className="w-full h-full rounded-xl border border-[rgba(255,0,60,0.25)] shadow-2xl bg-[#120614]"
-              />
+              >
+                <iframe
+                  src="/resume.pdf#toolbar=1&navpanes=0&scrollbar=1"
+                  title="Siddharth Sanjay Bade Resume"
+                  className="w-full h-full rounded-xl border border-[rgba(255,0,60,0.25)]"
+                >
+                  <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-white bg-[#120614] rounded-xl border border-white/10">
+                    <i className="fa-solid fa-file-pdf text-4xl text-[var(--blood-neon)] mb-3" />
+                    <p className="text-sm font-semibold mb-2">Unable to display PDF inline on this device</p>
+                    <p className="text-xs text-[var(--text-silver)] mb-4 max-w-sm">
+                      Your browser has native PDF preview disabled. You can view the Interactive ATS tab or download the file directly.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('ats')}
+                        className="btn btn-blood"
+                      >
+                        <i className="fa-solid fa-align-left mr-2" />
+                        <span>Interactive ATS View</span>
+                      </button>
+                      <a
+                        href="/resume.pdf"
+                        download="Siddharth_Bade_Resume.pdf"
+                        className="btn btn-glass"
+                      >
+                        <i className="fa-solid fa-download mr-2" />
+                        <span>Download PDF</span>
+                      </a>
+                    </div>
+                  </div>
+                </iframe>
+              </object>
               <p className="text-[11px] text-[var(--text-muted)] mt-2">
                 Viewing embedded document in-app. You can zoom, scroll, or switch to the Interactive ATS format above.
               </p>
