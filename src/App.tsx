@@ -89,6 +89,15 @@ function App() {
     return () => window.removeEventListener('open-resume', handleOpenResume)
   }, [])
 
+  /* ── Pause Lenis smooth scroll when ResumeModal is open ── */
+  useEffect(() => {
+    if (isResumeOpen) {
+      lenisRef.current?.stop()
+    } else {
+      lenisRef.current?.start()
+    }
+  }, [isResumeOpen])
+
   /* ── Preloader complete ── */
   const handleLoaded = useCallback(() => {
     setLoaded(true)

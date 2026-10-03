@@ -198,6 +198,7 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
 
   return (
     <div
+      data-lenis-prevent="true"
       className="fixed inset-0 z-[100001] flex items-center justify-center p-3 sm:p-5 md:p-8 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
@@ -210,7 +211,10 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       />
 
       {/* Main Modal Container */}
-      <div className="relative z-10 w-full max-w-5xl max-h-[94vh] bg-[#0c030a] border border-[rgba(255,0,60,0.4)] rounded-2xl md:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(255,0,60,0.25)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div
+        data-lenis-prevent="true"
+        className="relative z-10 w-full max-w-5xl max-h-[94vh] bg-[#0c030a] border border-[rgba(255,0,60,0.4)] rounded-2xl md:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(255,0,60,0.25)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+      >
         {/* ── Modal Header Bar ── */}
         <div className="px-5 py-4 border-b border-[rgba(255,0,60,0.2)] bg-[#120410]/95 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -273,20 +277,35 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
               <span className="hidden md:inline">Download</span>
             </a>
 
-            {/* Close Button */}
+            {/* Close Button with high-contrast inline SVG cross */}
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-xl bg-[rgba(255,0,60,0.12)] border border-[rgba(255,0,60,0.35)] text-white hover:bg-[var(--blood-neon)] hover:border-white transition-all flex items-center justify-center text-sm cursor-pointer shadow-md"
+              className="w-9 h-9 rounded-xl bg-[rgba(255,0,60,0.2)] border border-[var(--blood-neon)] text-white hover:bg-[var(--blood-neon)] hover:border-white transition-all flex items-center justify-center cursor-pointer shadow-[0_0_12px_rgba(255,0,60,0.35)] z-30"
               aria-label="Close resume viewer"
+              title="Close resume viewer"
             >
-              <i className="fa-solid fa-xmark" />
+              <svg
+                className="w-4 h-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>
 
-        {/* ── Modal Content Body ── */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#080208]">
+        {/* ── Modal Content Body (Scrollable container with native wheel support) ── */}
+        <div
+          data-lenis-prevent="true"
+          onWheel={(e) => e.stopPropagation()}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#080208]"
+          style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+        >
           {activeTab === 'pdf' ? (
             /* Tab 1: High-Fidelity Canvas Vector PDF Viewer (Bypasses all browser plugin blocks) */
             <div className="w-full flex flex-col items-center">
