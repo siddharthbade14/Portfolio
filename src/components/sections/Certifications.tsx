@@ -1,29 +1,68 @@
+import { useEffect, useRef } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { certificates, achievements } from '../../data'
 
+gsap.registerPlugin(ScrollTrigger)
+
 /**
- * Certifications section matching reference site:
- * - Section tag '// VERIFIED CREDENTIALS'
- * - Section title 'HONORS & <span className="blood-text">CERTIFICATIONS</span>'
- * - Dark Blood Obsidian glass cards
- * - Tata GenAI Powered Data Analytics Job Simulation (Forage)
- * - Academic Excellence Rank 1st and Branch Treasurer
+ * Certifications section:
+ * - Section tag '06 // VERIFIED CREDENTIALS'
+ * - Section title 'HONORS & CERTIFICATIONS'
+ * - GSAP ScrollTrigger entrance animations
  */
 export default function Certifications() {
-  return (
-    <section id="certifications" className="section certifications-section">
-      <div className="section-content">
-        <div className="section-tag">// VERIFIED CREDENTIALS</div>
-        <h2 className="section-title">
-          HONORS &amp; <span className="blood-text">CERTIFICATIONS</span>
-        </h2>
+  const sectionRef = useRef<HTMLElement>(null)
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion || !sectionRef.current) return
+
+    const ctx = gsap.context(() => {
+      gsap.from('.cert-header-anim', {
+        x: -25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.cert-header-anim',
+          start: 'top 85%',
+        },
+      })
+
+      gsap.from('.cert-card-anim', {
+        y: 45,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.cert-grid-anim',
+          start: 'top 82%',
+        },
+      })
+    }, sectionRef)
+
+    return () => ctx.revert()
+  }, [])
+
+  return (
+    <section ref={sectionRef} id="certifications" className="section certifications-section">
+      <div className="section-content">
+        <div className="cert-header-anim">
+          <div className="section-tag">06 // VERIFIED CREDENTIALS</div>
+          <h2 className="section-title">
+            HONORS &amp; <span className="blood-text">CERTIFICATIONS</span>
+          </h2>
+        </div>
+
+        <div className="cert-grid-anim grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-8">
           {/* ── Primary Verified Certificate (Tata GenAI) ── */}
           <div className="lg:col-span-2 flex flex-col gap-6">
             {certificates.map((cert) => (
               <div
                 key={cert.id}
-                className="glass-card p-8 md:p-9 relative overflow-hidden"
+                className="cert-card-anim glass-card p-8 md:p-9 relative overflow-hidden"
               >
                 {/* Certificate Header */}
                 <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
@@ -81,7 +120,7 @@ export default function Certifications() {
             {achievements.map((ach, idx) => (
               <div
                 key={idx}
-                className="glass-card p-6 md:p-7 flex flex-col justify-between"
+                className="cert-card-anim glass-card p-6 md:p-7 flex flex-col justify-between"
               >
                 <div className="flex items-center gap-3.5 mb-3">
                   <div

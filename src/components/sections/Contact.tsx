@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import emailjs from '@emailjs/browser'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { personal } from '../../data'
 
+gsap.registerPlugin(ScrollTrigger)
+
 // ── EmailJS configuration ──────────────────────────────────────
-// Service ID  : create a free account at emailjs.com → Email Services
-// Template ID : create a template with variables: {{from_name}}, {{from_email}}, {{message}}
-// Public Key  : Settings → API Keys → Public Key
-// The template should send TO: siddharthsanjaybade212223@gmail.com
 const EMAILJS_SERVICE_ID = 'service_a53pg4g'
 const EMAILJS_TEMPLATE_ID = 'template_ll4dyn4'
 const EMAILJS_PUBLIC_KEY = 'jzkNH0eAazLbG1Sw3'
@@ -21,16 +21,82 @@ interface ContactProps {
 }
 
 export default function Contact({ onOpenResume }: ContactProps) {
+  const sectionRef = useRef<HTMLElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
+  const [gotcha, setGotcha] = useState('')
   const [status, setStatus] = useState<FormStatus>('idle')
+  const [lastSubmit, setLastSubmit] = useState(0)
+  const [cooldownMsg, setCooldownMsg] = useState('')
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion || !sectionRef.current) return
+
+    const ctx = gsap.context(() => {
+      gsap.from('.contact-header-anim', {
+        x: -25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.contact-header-anim',
+          start: 'top 85%',
+        },
+      })
+
+      gsap.from('.contact-meta-anim', {
+        x: -30,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.contact-info',
+          start: 'top 85%',
+        },
+      })
+
+      gsap.from('.contact-form-anim', {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.contact-form',
+          start: 'top 85%',
+        },
+      })
+    }, sectionRef)
+
+    return () => ctx.revert()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (status === 'sending') return
-    setStatus('sending')
 
-    // Send with every common variable name variant — template will pick what it uses
+    // 1. Anti-spam Honeypot Trap: If hidden bot field is populated, simulate success
+    if (gotcha.trim().length > 0) {
+      console.warn('Bot submission trapped via honeypot field.')
+      setStatus('success')
+      setFormData({ name: '', email: '', message: '' })
+      setTimeout(() => setStatus('idle'), 4000)
+      return
+    }
+
+    // 2. Client-side Rate-limiting Cooldown (30 seconds)
+    const now = Date.now()
+    if (now - lastSubmit < 30000) {
+      const waitSec = Math.ceil((30000 - (now - lastSubmit)) / 1000)
+      setCooldownMsg(`Rate limit: Please wait ${waitSec}s before sending another message.`)
+      setTimeout(() => setCooldownMsg(''), 4000)
+      return
+    }
+
+    setStatus('sending')
+    setCooldownMsg('')
+
     const params = {
       from_name: formData.name,
       user_name: formData.name,
@@ -46,6 +112,7 @@ export default function Contact({ onOpenResume }: ContactProps) {
     try {
       const res = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
       console.log('EmailJS success:', res.status, res.text)
+      setLastSubmit(Date.now())
       setStatus('success')
       setFormData({ name: '', email: '', message: '' })
       setTimeout(() => setStatus('idle'), 5000)
@@ -68,35 +135,37 @@ export default function Contact({ onOpenResume }: ContactProps) {
 
   return (
     <>
-      <section id="contact" className="section contact-section">
+      <section ref={sectionRef} id="contact" className="section contact-section">
         <div className="section-content">
-          <div className="section-tag">05 // GET IN TOUCH</div>
-          <h2 className="section-title">
-            START A <span className="blood-text">CONVERSATION</span>
-          </h2>
+          <div className="contact-header-anim">
+            <div className="section-tag">07 // GET IN TOUCH</div>
+            <h2 className="section-title">
+              START A <span className="blood-text">CONVERSATION</span>
+            </h2>
+          </div>
 
           <div className="contact-grid">
             {/* ── Left Column: Contact Meta & Resume Card ── */}
             <div className="contact-info">
-              <p className="contact-lead">
+              <p className="contact-lead contact-meta-anim">
                 Have an exciting idea, an ambitious project, or an engineering role? Let's build something remarkable together.
               </p>
 
-              <div className="contact-meta-item">
+              <div className="contact-meta-item contact-meta-anim">
                 <i className="fa-regular fa-envelope" />
                 <a href={`mailto:${personal.email}`} className="contact-meta-link">
                   {personal.email}
                 </a>
               </div>
 
-              <div className="contact-meta-item">
+              <div className="contact-meta-item contact-meta-anim">
                 <i className="fa-solid fa-phone" />
                 <a href={personal.telLink} className="contact-meta-link">
                   {personal.phone}
                 </a>
               </div>
 
-              <div className="contact-meta-item">
+              <div className="contact-meta-item contact-meta-anim">
                 <i className="fa-brands fa-whatsapp" style={{ color: '#25d366' }} />
                 <a
                   href={personal.whatsapp}
@@ -108,7 +177,7 @@ export default function Contact({ onOpenResume }: ContactProps) {
                 </a>
               </div>
 
-              <div className="contact-meta-item">
+              <div className="contact-meta-item contact-meta-anim">
                 <i className="fa-solid fa-location-dot" />
                 <span>
                   {personal.location} &bull; Open for Remote &amp; Relocation
@@ -116,7 +185,7 @@ export default function Contact({ onOpenResume }: ContactProps) {
               </div>
 
               {/* Verified Social Handles */}
-              <div className="contact-social-group">
+              <div className="contact-social-group contact-meta-anim">
                 <span className="social-group-label">CONNECT ACROSS PLATFORMS:</span>
                 <div className="contact-socials">
                   <a
@@ -175,7 +244,7 @@ export default function Contact({ onOpenResume }: ContactProps) {
               </div>
 
               {/* Interactive Resume Showcase Card */}
-              <div className="resume-showcase-card glass-card">
+              <div className="resume-showcase-card glass-card contact-meta-anim">
                 <div className="resume-card-header">
                   <div className="resume-icon-badge">
                     <i className="fa-solid fa-file-pdf" />
@@ -203,13 +272,25 @@ export default function Contact({ onOpenResume }: ContactProps) {
               </div>
             </div>
 
-            {/* ── Right Column: Message Form ── */}
+            {/* ── Right Column: Message Form with Honeypot & Rate-Limiting ── */}
             <form
               ref={formRef}
               onSubmit={handleSubmit}
-              className="contact-form glass-card"
+              className="contact-form glass-card contact-form-anim"
               id="contactForm"
             >
+              {/* Invisible Bot Honeypot Field */}
+              <input
+                type="text"
+                name="_gotcha"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ display: 'none', position: 'absolute', left: '-9999px', opacity: 0 }}
+                value={gotcha}
+                onChange={(e) => setGotcha(e.target.value)}
+              />
+
               <div className="form-group">
                 <label htmlFor="contactName">YOUR NAME</label>
                 <input
@@ -237,17 +318,30 @@ export default function Contact({ onOpenResume }: ContactProps) {
               </div>
 
               <div className="form-group">
-                <label htmlFor="contactMsg">MESSAGE</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="contactMsg" className="m-0">MESSAGE</label>
+                  <span className={`text-[11px] font-mono ${formData.message.length > 950 ? 'text-[var(--blood-neon)] font-bold' : 'text-[var(--text-silver)]'}`}>
+                    {formData.message.length} / 1000
+                  </span>
+                </div>
                 <textarea
                   id="contactMsg"
                   name="message"
                   rows={4}
+                  maxLength={1000}
                   placeholder="Tell me about your project, timeline, or engineering role..."
                   required
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 />
               </div>
+
+              {cooldownMsg && (
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs mb-3 flex items-center gap-2">
+                  <i className="fa-solid fa-clock text-xs" />
+                  <span>{cooldownMsg}</span>
+                </div>
+              )}
 
               <button
                 type="submit"

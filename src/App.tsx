@@ -26,6 +26,7 @@ function App() {
   const [mouseY, setMouseY] = useState(0)
   const [isResumeOpen, setIsResumeOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const [showBackToTop, setShowBackToTop] = useState(false)
 
   // Detect mobile / reduced motion
   const reducedMotion =
@@ -58,8 +59,9 @@ function App() {
     })
     gsap.ticker.lagSmoothing(0)
 
-    lenis.on('scroll', ({ progress }: { progress: number }) => {
+    lenis.on('scroll', ({ progress, scroll }: { progress: number; scroll: number }) => {
       setScrollProgress(progress)
+      setShowBackToTop(scroll > 500)
     })
 
     return () => {
@@ -92,6 +94,15 @@ function App() {
     setLoaded(true)
     setTimeout(() => ScrollTrigger.refresh(), 100)
   }, [])
+
+  /* ── Back to Top ── */
+  const scrollToTop = () => {
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(0, { duration: 1.2 })
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 
   return (
     <>
@@ -135,7 +146,7 @@ function App() {
           onOpenResume={() => setIsResumeOpen(true)}
         />
         <About />
-        <Skills />
+        <Skills isMobile={isMobile} />
         <Projects />
         <Education />
         <Certifications />
@@ -143,6 +154,19 @@ function App() {
           onOpenResume={() => setIsResumeOpen(true)}
         />
       </main>
+
+      {/* Floating Back to Top Button */}
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="back-to-top-btn"
+          aria-label="Back to top"
+          title="Return to top"
+        >
+          <i className="fa-solid fa-arrow-up" />
+        </button>
+      )}
     </>
   )
 }

@@ -29,7 +29,7 @@ export default function Navbar({ onOpenResume }: NavbarProps) {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sectionIds = ['hero', 'about', 'skills', 'projects', 'education', 'contact']
+      const sectionIds = ['hero', 'about', 'skills', 'projects', 'education', 'certifications', 'contact']
       const scrollY = window.scrollY + 200
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {

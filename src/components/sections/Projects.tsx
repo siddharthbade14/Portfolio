@@ -1,45 +1,128 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { projects, type ProjectDetail } from '../../data'
 
+gsap.registerPlugin(ScrollTrigger)
+
 /**
- * Projects section matching reference site:
+ * Projects section:
  * - Section tag '04 // PORTFOLIO SHOWCASE'
- * - Section title 'FEATURED PROJECTS' (with blood-text gradient)
- * - Strictly 2 projects (NexStep SIH '26 and JARVIS)
- * - Glassmorphic card styling, overlay badges, code tags ('FEATURED // 01', 'FEATURED // 02')
- * - Action buttons ('Open Project', 'GitHub', 'Details')
- * - Full-screen Project Details Modal with system architecture & features
+ * - Section title 'FEATURED PROJECTS'
+ * - GSAP ScrollTrigger entrance stagger
+ * - Full-screen Project Details Modal with WCAG keyboard focus trap (Tab wrap + Escape close)
  */
 export default function Projects() {
   const [activeModalProject, setActiveModalProject] = useState<ProjectDetail | null>(null)
+  const sectionRef = useRef<HTMLElement>(null)
+  const modalContainerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLElement | null>(null)
 
-  // Prevent background scrolling when modal is open
+  // Scroll animations
   useEffect(() => {
-    if (activeModalProject) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion || !sectionRef.current) return
+
+    const ctx = gsap.context(() => {
+      gsap.from('.projects-header-anim', {
+        x: -25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.projects-header-anim',
+          start: 'top 85%',
+        },
+      })
+
+      gsap.from('.project-card', {
+        y: 60,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.18,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.projects-grid',
+          start: 'top 85%',
+        },
+      })
+    }, sectionRef)
+
+    return () => ctx.revert()
+  }, [])
+
+  // Modal background lock + Focus Trap & Escape key handling
+  useEffect(() => {
+    if (!activeModalProject) return
+
+    document.body.style.overflow = 'hidden'
+
+    const container = modalContainerRef.current
+    if (!container) return
+
+    // Find focusable elements
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const focusableElements = container.querySelectorAll<HTMLElement>(focusableSelector)
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+
+    // Focus close button initially
+    firstElement?.focus()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeModal()
+        return
+      }
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault()
+            lastElement?.focus()
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault()
+            firstElement?.focus()
+          }
+        }
+      }
     }
+
+    window.addEventListener('keydown', handleKeyDown)
+
     return () => {
       document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [activeModalProject])
 
-  const openModal = (proj: ProjectDetail) => {
+  const openModal = (proj: ProjectDetail, e?: React.MouseEvent<HTMLElement>) => {
+    if (e) {
+      triggerRef.current = e.currentTarget
+    }
     setActiveModalProject(proj)
   }
 
   const closeModal = () => {
     setActiveModalProject(null)
+    // Restore focus to the trigger element that opened the modal
+    setTimeout(() => {
+      triggerRef.current?.focus()
+    }, 50)
   }
 
   return (
-    <section id="projects" className="section projects-section">
+    <section ref={sectionRef} id="projects" className="section projects-section">
       <div className="section-content">
-        <div className="section-tag">04 // PORTFOLIO SHOWCASE</div>
-        <h2 className="section-title">
-          FEATURED <span className="blood-text">PROJECTS</span>
-        </h2>
+        <div className="projects-header-anim">
+          <div className="section-tag">04 // PORTFOLIO SHOWCASE</div>
+          <h2 className="section-title">
+            FEATURED <span className="blood-text">PROJECTS</span>
+          </h2>
+        </div>
 
         <div className="projects-grid">
           {projects.map((proj, idx) => (
@@ -68,69 +151,76 @@ export default function Projects() {
                     FEATURED // 0{idx + 1}
                   </span>
                   <div className="project-links">
-                    <a
-                      href={proj.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="GitHub Repository"
-                      title="GitHub Repository"
-                    >
-                      <i className="fa-brands fa-github" />
-                    </a>
                     {proj.liveUrl && (
                       <a
                         href={proj.liveUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Live Demo"
-                        title="Open Live App"
+                        className="project-link-btn"
+                        title="Live Platform"
                       >
                         <i className="fa-solid fa-arrow-up-right-from-square" />
                       </a>
                     )}
+                    <a
+                      href={proj.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="project-link-btn"
+                      title="GitHub Repository"
+                    >
+                      <i className="fa-brands fa-github" />
+                    </a>
                   </div>
                 </div>
 
                 <h3 className="project-title">{proj.title}</h3>
                 <p className="project-desc">{proj.description}</p>
 
-                {/* Tech Pills */}
-                <div className="card-pills">
-                  {proj.tags.map((tag) => (
-                    <span key={tag}>{tag}</span>
+                {/* Tags */}
+                <div className="project-tags">
+                  {proj.tags.map((t) => (
+                    <span key={t} className="project-tag">
+                      {t}
+                    </span>
                   ))}
                 </div>
 
-                {/* Actions */}
-                <div className="project-actions">
-                  {proj.liveUrl && (
+                {/* Footer Action */}
+                <div className="project-footer">
+                  <div className="project-meta-info">
+                    <span className="project-role-tag">{proj.role}</span>
+                  </div>
+                  <div className="project-actions-row">
+                    {proj.liveUrl && (
+                      <a
+                        href={proj.liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-card-action btn-card-live"
+                      >
+                        <i className="fa-solid fa-bolt text-xs" />
+                        <span>Open Project</span>
+                      </a>
+                    )}
                     <a
-                      href={proj.liveUrl}
+                      href={proj.github}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="proj-btn live-btn"
+                      className="btn-card-action btn-card-github"
                     >
-                      <span>Open Project</span>
-                      <i className="fa-solid fa-arrow-up-right-from-square text-xs" />
+                      <i className="fa-brands fa-github text-xs" />
+                      <span>GitHub</span>
                     </a>
-                  )}
-                  <a
-                    href={proj.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="proj-btn github-btn"
-                  >
-                    <i className="fa-brands fa-github text-sm" />
-                    <span>GitHub</span>
-                  </a>
-                  <button
-                    type="button"
-                    className="proj-btn detail-btn"
-                    onClick={() => openModal(proj)}
-                  >
-                    <span>Details</span>
-                    <i className="fa-solid fa-expand text-xs" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={(e) => openModal(proj, e)}
+                      className="btn-card-action btn-card-details"
+                    >
+                      <i className="fa-solid fa-circle-info text-xs" />
+                      <span>Details</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -144,9 +234,10 @@ export default function Projects() {
           className="project-modal active"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="modalProjectTitle"
         >
           <div className="modal-backdrop" onClick={closeModal} />
-          <div className="modal-container">
+          <div ref={modalContainerRef} className="modal-container">
             {/* Close Button */}
             <button
               type="button"
@@ -169,7 +260,7 @@ export default function Projects() {
                   <i className={activeModalProject.badgeIcon} />
                   <span>{activeModalProject.badge}</span>
                 </div>
-                <h2 className="modal-title">{activeModalProject.title}</h2>
+                <h2 id="modalProjectTitle" className="modal-title">{activeModalProject.title}</h2>
                 <p className="modal-subtitle">{activeModalProject.subtitle}</p>
                 <div className="modal-hero-actions">
                   {activeModalProject.liveUrl && (

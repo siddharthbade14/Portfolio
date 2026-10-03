@@ -74,6 +74,7 @@ export default function Hero({ loaded = true, onOpenResume }: HeroProps) {
       <div className="hero-split-grid">
         {/* ── Left Column: Typography, Name & CTAs ── */}
         <div ref={leftRef} className="hero-text-side">
+          <div className="section-tag mb-3">01 // SYSTEM ONLINE</div>
           <div className="tech-badge">
             <i className="fa-solid fa-code" /> AI &amp; DATA SCIENCE ENGINEER
           </div>
@@ -149,6 +150,9 @@ export default function Hero({ loaded = true, onOpenResume }: HeroProps) {
               src="/assets/images/hero_avatar.jpg"
               alt="Siddharth Bade Normal Form"
               className="character-layer character-normal"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
 
             {/* Layer 2: Cyber Alter-Ego (Revealed via Dynamic CSS Masking) */}
@@ -157,6 +161,8 @@ export default function Hero({ loaded = true, onOpenResume }: HeroProps) {
               src="/assets/images/villain_cutout.jpg"
               alt="Siddharth Bade Cyber Alter-Ego"
               className="character-layer character-villain"
+              loading="eager"
+              decoding="async"
             />
 
             {/* Ground Radial Shadow */}

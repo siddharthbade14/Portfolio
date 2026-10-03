@@ -1,23 +1,73 @@
-import { useState } from 'react'
-import { personal } from '../../data'
+import { useState, useRef, useEffect } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { personal, stats } from '../../data'
+
+gsap.registerPlugin(ScrollTrigger)
 
 /**
- * About section matching reference site:
- * - Two-column interactive showcase
- * - Left column: Clickable avatar card with persona badge, corner brackets & click hint
- * - Right column: 3D Flipping dossier container alternating between:
- *    - STATE 1: Engineering With Purpose + verified stats (8.47 SGPA, 1st Batch Rank)
- *    - STATE 2: Beyond The Code (Personal Dossier)
+ * About section:
+ * - Two-column interactive showcase with ARIA live region for accessibility.
+ * - Left column: Clickable avatar card with persona badge, corner brackets & click hint.
+ * - Right column: 3D Flipping dossier container (State 1: Professional, State 2: Dossier).
+ * - GSAP ScrollTrigger: Text reveals and animated numerical stats counter driven by data.ts.
  */
 export default function About() {
   const [isFlipped, setIsFlipped] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
+  const statsRef = useRef<HTMLDivElement>(null)
 
   const toggleDossier = () => {
     setIsFlipped((prev) => !prev)
   }
 
+  // Scroll animations & dynamic counter
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion || !sectionRef.current) return
+
+    const ctx = gsap.context(() => {
+      // Header entrance animation
+      gsap.from('.about-header-anim', {
+        x: -25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.about-header-anim',
+          start: 'top 85%',
+        },
+      })
+
+      // Dynamic counting stats
+      const statElements = document.querySelectorAll('.dynamic-stat-value')
+      statElements.forEach((el) => {
+        const targetVal = parseFloat(el.getAttribute('data-target') || '0')
+        const decimals = parseInt(el.getAttribute('data-decimals') || '0', 10)
+        const suffix = el.getAttribute('data-suffix') || ''
+
+        const counterObj = { val: 0 }
+        gsap.to(counterObj, {
+          val: targetVal,
+          duration: 1.8,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: statsRef.current,
+            start: 'top 85%',
+            once: true,
+          },
+          onUpdate: () => {
+            el.textContent = `${counterObj.val.toFixed(decimals)}${suffix}`
+          },
+        })
+      })
+    }, sectionRef)
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <section id="about" className="section about-section">
+    <section ref={sectionRef} id="about" className="section about-section">
       <div className="about-two-col-grid">
         {/* ── Left Column: Clickable Avatar Card ── */}
         <div
@@ -27,6 +77,7 @@ export default function About() {
           title="Click to flip dossier"
           role="button"
           tabIndex={0}
+          aria-expanded={isFlipped}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
@@ -53,6 +104,7 @@ export default function About() {
             src="/assets/images/about_character.jpg"
             alt="Siddharth Bade Standing Pose"
             className="about-character-img"
+            loading="lazy"
           />
 
           {/* Click Hint */}
@@ -62,18 +114,22 @@ export default function About() {
           </div>
         </div>
 
-        {/* ── Right Column: 3D Flipping Content Panel ── */}
+        {/* ── Right Column: 3D Flipping Content Panel with ARIA Live Region ── */}
         <div
           id="aboutContent"
           className={`about-content glass-card ${isFlipped ? 'villain-content' : ''}`}
+          aria-live="polite"
+          aria-atomic="true"
         >
           {/* STATE 1: Professional Info */}
           <div className="about-info-state" id="aboutInfo1">
-            <div className="section-tag">02 // ABOUT ME</div>
-            <h2 className="section-title about-state1-title">
-              ENGINEERING<br />
-              WITH <span className="blood-text">PURPOSE</span>
-            </h2>
+            <div className="about-header-anim">
+              <div className="section-tag">02 // ABOUT ME</div>
+              <h2 className="section-title about-state1-title">
+                ENGINEERING<br />
+                WITH <span className="blood-text">PURPOSE</span>
+              </h2>
+            </div>
             <div className="about-text">
               <p className="lead-text">
                 I bridge the gap between algorithmic intelligence and rock-solid software engineering.
@@ -81,19 +137,22 @@ export default function About() {
               <p>
                 Third-year B.Tech Artificial Intelligence &amp; Data Science student at Adsul's Technical Campus, Ahilyanagar. Ranked 1st across the combined first-year engineering batch with an 8.47/10 SGPA. I specialize in building end-to-end intelligent systems, machine learning applications, and full-stack web platforms.
               </p>
-              <div className="stats-row">
-                <div className="stat-box">
-                  <span className="stat-number">8.47</span>
-                  <span className="stat-label">FIRST-YEAR SGPA</span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-number">1st</span>
-                  <span className="stat-label">BATCH RANK</span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-number">5+</span>
-                  <span className="stat-label">PROJECTS BUILT</span>
-                </div>
+
+              {/* Stats Row fed dynamically from data.ts */}
+              <div ref={statsRef} className="stats-row">
+                {stats.slice(0, 3).map((st) => (
+                  <div key={st.label} className="stat-box">
+                    <span
+                      className="stat-number dynamic-stat-value"
+                      data-target={st.value}
+                      data-decimals={st.decimals ?? (Number.isInteger(st.value) ? 0 : 2)}
+                      data-suffix={st.suffix || ''}
+                    >
+                      {st.value}{st.suffix}
+                    </span>
+                    <span className="stat-label">{st.label.toUpperCase()}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
