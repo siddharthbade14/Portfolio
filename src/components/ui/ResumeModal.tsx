@@ -1,5 +1,165 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import * as pdfjsLib from 'pdfjs-dist'
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { personal, projects } from '../../data'
+
+// Configure PDF.js worker URL
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
+
+function PdfCanvasViewer({
+  pdfUrl,
+  onSwitchToAts,
+}: {
+  pdfUrl: string
+  onSwitchToAts: () => void
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [scale, setScale] = useState(1.35)
+
+  useEffect(() => {
+    let isCancelled = false
+    setLoading(true)
+    setError(null)
+
+    const render = async () => {
+      try {
+        const loadingTask = pdfjsLib.getDocument({ url: pdfUrl })
+        const pdf = await loadingTask.promise
+        if (isCancelled) return
+
+        const page = await pdf.getPage(1)
+        if (isCancelled) return
+
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const context = canvas.getContext('2d')
+        if (!context) return
+
+        const viewport = page.getViewport({ scale })
+        canvas.width = viewport.width
+        canvas.height = viewport.height
+
+        await page.render({
+          canvas,
+          canvasContext: context,
+          viewport,
+        }).promise
+
+        if (!isCancelled) {
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('PDF.js render error:', err)
+        if (!isCancelled) {
+          setError('Unable to parse PDF on this device')
+          setLoading(false)
+        }
+      }
+    }
+
+    render()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [pdfUrl, scale])
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      {/* Control bar */}
+      <div className="flex items-center gap-3 mb-4 p-1.5 px-4 rounded-full bg-white/[0.06] border border-white/10 text-xs text-white shadow-lg">
+        <button
+          type="button"
+          onClick={() => setScale((s) => Math.max(0.75, s - 0.15))}
+          className="hover:text-[var(--blood-neon)] transition-colors p-1"
+          title="Zoom out"
+          aria-label="Zoom out"
+        >
+          <i className="fa-solid fa-magnifying-glass-minus" />
+        </button>
+        <span className="font-mono text-[11px] text-[var(--text-silver)] font-bold min-w-[38px] text-center">
+          {Math.round(scale * 100)}%
+        </span>
+        <button
+          type="button"
+          onClick={() => setScale((s) => Math.min(2.2, s + 0.15))}
+          className="hover:text-[var(--blood-neon)] transition-colors p-1"
+          title="Zoom in"
+          aria-label="Zoom in"
+        >
+          <i className="fa-solid fa-magnifying-glass-plus" />
+        </button>
+        <span className="text-white/20">|</span>
+        <button
+          type="button"
+          onClick={onSwitchToAts}
+          className="hover:text-[var(--blood-neon)] transition-colors flex items-center gap-1.5 text-xs text-[var(--text-silver)] hover:text-white"
+        >
+          <i className="fa-solid fa-align-left text-xs" />
+          <span>Interactive ATS</span>
+        </button>
+        <span className="text-white/20">|</span>
+        <a
+          href={pdfUrl}
+          download="Siddharth_Bade_Resume.pdf"
+          className="hover:text-[var(--blood-neon)] transition-colors flex items-center gap-1.5 text-xs font-semibold text-[var(--blood-neon)]"
+        >
+          <i className="fa-solid fa-download text-xs" />
+          <span>Save PDF</span>
+        </a>
+      </div>
+
+      {loading && (
+        <div className="py-24 flex flex-col items-center gap-3 text-white">
+          <i className="fa-solid fa-spinner fa-spin text-3xl text-[var(--blood-neon)]" />
+          <span className="text-xs text-[var(--text-silver)] font-mono tracking-wider">
+            Rendering high-fidelity vector PDF...
+          </span>
+        </div>
+      )}
+
+      {error ? (
+        <div className="py-16 flex flex-col items-center gap-3 text-white text-center p-6 bg-[#120410] rounded-2xl border border-white/10 max-w-md">
+          <i className="fa-solid fa-triangle-exclamation text-3xl text-amber-400 mb-1" />
+          <p className="text-sm font-semibold">{error}</p>
+          <p className="text-xs text-[var(--text-silver)]">
+            You can view the full Interactive ATS format or download the official PDF.
+          </p>
+          <div className="flex gap-3 mt-3">
+            <button
+              type="button"
+              onClick={onSwitchToAts}
+              className="btn btn-blood"
+            >
+              Interactive ATS View
+            </button>
+            <a
+              href={pdfUrl}
+              download="Siddharth_Bade_Resume.pdf"
+              className="btn btn-glass"
+            >
+              Download PDF
+            </a>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`overflow-auto max-w-full rounded-xl shadow-2xl border border-[rgba(255,0,60,0.3)] bg-white ${
+            loading ? 'hidden' : 'block'
+          }`}
+        >
+          <canvas ref={canvasRef} className="block max-w-full h-auto" />
+        </div>
+      )}
+
+      <p className="text-[11px] text-[var(--text-muted)] mt-3">
+        Rendered with HTML5 Canvas. Crisp vector typography with zoom controls.
+      </p>
+    </div>
+  )
+}
 
 interface ResumeModalProps {
   isOpen: boolean
@@ -128,48 +288,12 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
         {/* ── Modal Content Body ── */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#080208]">
           {activeTab === 'pdf' ? (
-            /* Tab 1: Embedded Native PDF Document */
-            <div className="w-full h-[74vh] md:h-[78vh] flex flex-col items-center">
-              <object
-                data="/resume.pdf#toolbar=1&navpanes=0&scrollbar=1"
-                type="application/pdf"
-                className="w-full h-full rounded-xl border border-[rgba(255,0,60,0.25)] shadow-2xl bg-[#120614]"
-              >
-                <iframe
-                  src="/resume.pdf#toolbar=1&navpanes=0&scrollbar=1"
-                  title="Siddharth Sanjay Bade Resume"
-                  className="w-full h-full rounded-xl border border-[rgba(255,0,60,0.25)]"
-                >
-                  <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-white bg-[#120614] rounded-xl border border-white/10">
-                    <i className="fa-solid fa-file-pdf text-4xl text-[var(--blood-neon)] mb-3" />
-                    <p className="text-sm font-semibold mb-2">Unable to display PDF inline on this device</p>
-                    <p className="text-xs text-[var(--text-silver)] mb-4 max-w-sm">
-                      Your browser has native PDF preview disabled. You can view the Interactive ATS tab or download the file directly.
-                    </p>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('ats')}
-                        className="btn btn-blood"
-                      >
-                        <i className="fa-solid fa-align-left mr-2" />
-                        <span>Interactive ATS View</span>
-                      </button>
-                      <a
-                        href="/resume.pdf"
-                        download="Siddharth_Bade_Resume.pdf"
-                        className="btn btn-glass"
-                      >
-                        <i className="fa-solid fa-download mr-2" />
-                        <span>Download PDF</span>
-                      </a>
-                    </div>
-                  </div>
-                </iframe>
-              </object>
-              <p className="text-[11px] text-[var(--text-muted)] mt-2">
-                Viewing embedded document in-app. You can zoom, scroll, or switch to the Interactive ATS format above.
-              </p>
+            /* Tab 1: High-Fidelity Canvas Vector PDF Viewer (Bypasses all browser plugin blocks) */
+            <div className="w-full flex flex-col items-center">
+              <PdfCanvasViewer
+                pdfUrl="/resume.pdf"
+                onSwitchToAts={() => setActiveTab('ats')}
+              />
             </div>
           ) : (
             /* Tab 2: High-Fidelity Interactive ATS Resume Format */
