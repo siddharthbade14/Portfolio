@@ -464,10 +464,16 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .nav-links {
-  display: flex;
+  display: none; /* hidden on mobile by default; md:flex overrides on desktop */
   align-items: center;
   gap: 1.75rem;
   list-style: none;
+}
+
+@media (min-width: 768px) {
+  .nav-links {
+    display: flex !important;
+  }
 }
 
 .nav-link {
@@ -505,7 +511,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .nav-status-pill {
-  display: flex;
+  display: none; /* hidden on mobile; lg:flex shown on desktop */
   align-items: center;
   gap: 0.5rem;
   background: rgba(255, 0, 60, 0.08);
@@ -517,6 +523,12 @@ body::-webkit-scrollbar-thumb:hover {
   font-weight: 700;
   color: var(--blood-neon);
   white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .nav-status-pill {
+    display: flex !important;
+  }
 }
 
 .status-beacon {
@@ -800,6 +812,7 @@ body::-webkit-scrollbar-thumb:hover {
   justify-content: center;
   position: relative;
   z-index: 10;
+  overflow-x: hidden;
 }
 
 .about-two-col-grid {
@@ -981,18 +994,20 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .about-content .about-state1-title {
-  font-size: clamp(1.95rem, 2.7vw, 2.9rem);
+  font-size: clamp(1.6rem, 5vw, 2.9rem);
   line-height: 1.1;
   margin-bottom: 0.95rem;
+  word-break: break-word;
 }
 
 .about-content .about-state2-title {
   font-family: var(--font-heading);
-  font-size: clamp(1.42rem, 1.95vw, 1.85rem);
+  font-size: clamp(1.15rem, 4vw, 1.85rem);
   letter-spacing: -0.01em;
   line-height: 1.15;
   margin-bottom: 0.55rem;
-  white-space: nowrap;
+  white-space: normal; /* was nowrap — caused overflow on mobile */
+  word-break: break-word;
 }
 
 .lead-text {
@@ -2067,31 +2082,45 @@ img, video, canvas, iframe, svg {
   }
 
   /* About */
+  .about-section {
+    padding: 4rem 1.25rem 3rem;
+  }
+
   .about-two-col-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .about-image-card {
-    min-height: 380px;
+    min-height: 320px;
   }
 
   .about-character-img {
-    height: 340px;
+    height: 290px;
   }
 
+  /* On mobile, about-content must be flow (not relative container for abs children) */
   .about-content {
     min-height: auto;
     overflow: visible;
     perspective: none;
+    display: block;
   }
 
   .about-info-state {
-    position: relative;
-    inset: auto;
-    padding: 1.5rem;
+    position: relative !important;
+    inset: auto !important;
+    padding: 1.25rem;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: all !important;
+    display: flex;
+    flex-direction: column;
   }
 
+  /* Only show the active state panel */
   #aboutInfo2 {
     display: none;
   }
