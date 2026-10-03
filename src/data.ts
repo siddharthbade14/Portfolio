@@ -12,6 +12,7 @@ export const personal = {
   location: 'Ahilyanagar, Maharashtra, India',
   phone: '+91 9217212223',
   phoneRaw: '9217212223',
+  telLink: 'tel:+919217212223',
   email: 'siddharthsanjaybade212223@gmail.com',
   linkedin: 'https://linkedin.com/in/siddharth-bade-348184316',
   github: 'https://github.com/siddharthbade14',
@@ -25,8 +26,9 @@ export const personal = {
     "I'm an aspiring AI & Data Science Engineer and 3rd-year engineering student at Adsul's Technical Campus, Ahilyanagar. Ranked 1st across the combined first-year batch with an 8.47/10 SGPA. I specialize in building end-to-end intelligent systems, machine learning applications, and full-stack web platforms.",
   bio2:
     "From architecting NexStep (a full-stack AI career guidance platform for Smart India Hackathon 2026 as sole developer) to developing continuous hands-free voice assistants with OpenAI API and speech recognition, I focus on shipping robust software with clean code and production-grade architectures.",
-  resumeUrl: '#',
+  resumeUrl: '/resume.pdf',
 }
+
 
 export const stats = [
   { value: 8.47, suffix: '', label: 'First-Year SGPA', decimals: 2 },

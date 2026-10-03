@@ -90,6 +90,13 @@ export default function Contact({ onOpenResume }: ContactProps) {
               </div>
 
               <div className="contact-meta-item">
+                <i className="fa-solid fa-phone" />
+                <a href={personal.telLink} className="contact-meta-link">
+                  {personal.phone}
+                </a>
+              </div>
+
+              <div className="contact-meta-item">
                 <i className="fa-brands fa-whatsapp" style={{ color: '#25d366' }} />
                 <a
                   href={personal.whatsapp}
@@ -97,7 +104,7 @@ export default function Contact({ onOpenResume }: ContactProps) {
                   rel="noopener noreferrer"
                   className="contact-meta-link"
                 >
-                  {personal.phone} (WhatsApp Direct)
+                  WhatsApp Direct
                 </a>
               </div>
 
@@ -262,17 +269,21 @@ export default function Contact({ onOpenResume }: ContactProps) {
               </button>
 
               {status === 'success' && (
-                <p className="text-center text-xs font-bold text-emerald-400 tracking-wider mt-3">
-                  ✓ Message sent! I'll get back to you soon.
-                </p>
+                <div className="form-status-msg form-status-success">
+                  <i className="fa-solid fa-circle-check" />
+                  <span>Message sent! I'll get back to you within 24 hours.</span>
+                </div>
               )}
               {status === 'error' && (
-                <p className="text-center text-xs font-bold text-red-400 tracking-wider mt-3">
-                  ✗ Something went wrong. Please email me directly at{' '}
-                  <a href={`mailto:${personal.email}`} className="underline">
-                    {personal.email}
-                  </a>
-                </p>
+                <div className="form-status-msg form-status-error">
+                  <i className="fa-solid fa-circle-exclamation" />
+                  <span>
+                    Something went wrong. Email me directly at{' '}
+                    <a href={`mailto:${personal.email}`} className="underline">
+                      {personal.email}
+                    </a>
+                  </span>
+                </div>
               )}
             </form>
           </div>
